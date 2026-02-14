@@ -1,6 +1,5 @@
 import streamlit as st
 import random
-import time
 
 # Cấu hình trang
 st.set_page_config(
@@ -33,7 +32,7 @@ st.markdown("""
         justify-content: center;
         align-items: center;
         z-index: 9999;
-        animation: fadeOut 0.5s ease 2s forwards;
+        animation: splashFadeOut 0.5s ease 2.5s forwards;
     }
     
     .splash-heart {
@@ -63,8 +62,8 @@ st.markdown("""
         100% { opacity: 1; width: 100%; }
     }
     
-    @keyframes fadeOut {
-        to { opacity: 0; visibility: hidden; }
+    @keyframes splashFadeOut {
+        to { opacity: 0; visibility: hidden; pointer-events: none; }
     }
     
     /* ===== GIFT BOX ===== */
@@ -131,13 +130,6 @@ st.markdown("""
     
     .stButton>button:active {
         transform: scale(0.95);
-        animation: buttonClick 0.3s ease;
-    }
-    
-    @keyframes buttonClick {
-        0% { transform: scale(1); }
-        50% { transform: scale(0.9); }
-        100% { transform: scale(0.95); }
     }
     
     /* ===== EXPLOSION ANIMATION ===== */
@@ -152,12 +144,7 @@ st.markdown("""
         justify-content: center;
         align-items: center;
         z-index: 9999;
-        animation: fadeIn 0.3s ease;
-    }
-    
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
+        animation: explosionFadeOut 0.5s ease 2.5s forwards;
     }
     
     .explosion-heart {
@@ -185,6 +172,10 @@ st.markdown("""
             transform: scale(1) rotate(0deg);
             opacity: 1;
         }
+    }
+    
+    @keyframes explosionFadeOut {
+        to { opacity: 0; visibility: hidden; pointer-events: none; }
     }
     
     /* Fireworks */
@@ -249,7 +240,7 @@ st.markdown("""
         justify-content: center;
         align-items: center;
         z-index: 10000;
-        animation: fadeIn 0.3s ease;
+        animation: megaFadeOut 0.5s ease 4s forwards;
     }
     
     .mega-heart {
@@ -306,6 +297,10 @@ st.markdown("""
         }
     }
     
+    @keyframes megaFadeOut {
+        to { opacity: 0; visibility: hidden; pointer-events: none; }
+    }
+    
     /* Mega fireworks */
     .mega-firework {
         position: fixed;
@@ -360,7 +355,7 @@ st.markdown("""
         box-shadow: 0 8px 32px rgba(233, 30, 99, 0.2);
         border: 3px solid #f48fb1;
         margin: 2rem 0;
-        animation: messageReveal 1s ease-out 2.5s both;
+        animation: messageReveal 1s ease-out;
     }
     
     @keyframes messageReveal {
@@ -413,7 +408,6 @@ st.markdown("""
         font-size: 1.8rem;
         text-align: center;
         margin: 1rem 0;
-        animation: fadeIn 1s ease 3s both;
     }
     
     .footer-text {
@@ -448,7 +442,7 @@ st.markdown("""
 
 # Danh sách lời yêu thương viết tay
 love_messages = [
-""" Bé minhthuy ơi! 
+    """ Bé minhthuy ơi! 
     Anh muốn nói với em rằng: anh cảm ơn bé vì món quà hôm nay bé tặng anh,
     anh nhớ bé và iu bé càng ngày càng nhiều rồi 
     Yêu em nhiều lắm! 💖""",
@@ -500,8 +494,6 @@ if 'love_count' not in st.session_state:
     st.session_state.love_count = 0
 if 'show_fool' not in st.session_state:
     st.session_state.show_fool = False
-if 'flying_hearts' not in st.session_state:
-    st.session_state.flying_hearts = []
 
 def generate_love_message() -> str:
     return random.choice(love_messages)
@@ -509,20 +501,35 @@ def generate_love_message() -> str:
 # ===== SPLASH SCREEN =====
 def show_splash():
     st.markdown("""
-    <div class="splash-screen" id="splash">
+    <div class="splash-screen">
         <div class="splash-heart">💓</div>
         <div class="splash-text">Gửi một điều ngọt ngào…</div>
     </div>
     <script>
         setTimeout(function() {
-            document.getElementById('splash').style.display = 'none';
-        }, 2500);
+            window.parent.postMessage({type: 'streamlit:setComponentValue', value: 'next'}, '*');
+        }, 2600);
     </script>
     """, unsafe_allow_html=True)
     
-    time.sleep(2.5)
-    st.session_state.screen = 'gift'
-    st.rerun()
+    # Auto chuyển màn hình
+    st.markdown("""
+    <script>
+        setTimeout(function() {
+            var buttons = window.parent.document.querySelectorAll('button');
+            for(var i = 0; i < buttons.length; i++) {
+                if(buttons[i].innerText === 'Next') {
+                    buttons[i].click();
+                    break;
+                }
+            }
+        }, 2700);
+    </script>
+    """, unsafe_allow_html=True)
+    
+    if st.button("Next", key="splash_next", type="primary"):
+        st.session_state.screen = 'gift'
+        st.rerun()
 
 # ===== GIFT SCREEN =====
 def show_gift():
@@ -561,6 +568,17 @@ def show_explosion():
         <div class="explosion-heart">💖</div>
         <div class="love-text">For You ❤️</div>
     </div>
+    <script>
+        setTimeout(function() {
+            var buttons = window.parent.document.querySelectorAll('button');
+            for(var i = 0; i < buttons.length; i++) {
+                if(buttons[i].innerText === 'Show Message') {
+                    buttons[i].click();
+                    break;
+                }
+            }
+        }, 2600);
+    </script>
     """, unsafe_allow_html=True)
     
     fireworks_html = ""
@@ -581,18 +599,29 @@ def show_explosion():
     
     st.markdown(fireworks_html, unsafe_allow_html=True)
     
-    time.sleep(2.5)
-    st.session_state.love_message = generate_love_message()
-    st.session_state.screen = 'message'
-    st.rerun()
+    if st.button("Show Message", key="explosion_next", type="primary"):
+        st.session_state.love_message = generate_love_message()
+        st.session_state.screen = 'message'
+        st.rerun()
 
 # ===== MEGA EXPLOSION (10 CLICKS) =====
 def show_mega_explosion():
     st.markdown("""
     <div class="mega-explosion">
         <div class="mega-heart">💖</div>
-        <div class="fool-text">Đồ Ngốc! 😝 Biết minhminh thương anh Namtran đẹp trai siêu cấp rùi 💖 </div>
+        <div class="fool-text">Đồ Ngốc! 😝 Biết minhminh rất iu anh rùi!! </div>
     </div>
+    <script>
+        setTimeout(function() {
+            var buttons = window.parent.document.querySelectorAll('button');
+            for(var i = 0; i < buttons.length; i++) {
+                if(buttons[i].innerText === 'Back') {
+                    buttons[i].click();
+                    break;
+                }
+            }
+        }, 4100);
+    </script>
     """, unsafe_allow_html=True)
     
     # Mega fireworks
@@ -614,10 +643,10 @@ def show_mega_explosion():
     
     st.markdown(fireworks_html, unsafe_allow_html=True)
     
-    time.sleep(7)
-    st.session_state.show_fool = False
-    st.session_state.love_count = 0
-    st.rerun()
+    if st.button("Back", key="mega_back", type="primary"):
+        st.session_state.show_fool = False
+        st.session_state.love_count = 0
+        st.rerun()
 
 # ===== MESSAGE SCREEN =====
 def show_message():
@@ -636,13 +665,8 @@ def show_message():
     </div>
     """, unsafe_allow_html=True)
     
-    # Hiển thị flying hearts
-    if st.session_state.flying_hearts:
-        hearts_html = ""
-        for heart in st.session_state.flying_hearts:
-            hearts_html += heart
-        st.markdown(hearts_html, unsafe_allow_html=True)
-        st.session_state.flying_hearts = []
+    # Flying hearts container
+    hearts_container = st.empty()
     
     st.markdown("<h1 class='main-title'>Happy Valentine's Day! 💕</h1>", unsafe_allow_html=True)
     
@@ -652,9 +676,9 @@ def show_message():
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("<p class='love-message'>Yêu bé Minh Minh nhiều lắm 🥰</p>", unsafe_allow_html=True)
+    st.markdown("<p class='love-message'>Yêu bé Minhthuy nhiều lắm 🥰</p>", unsafe_allow_html=True)
     
-    # Buttons - CHỈ CÒN 2 NÚT
+    # Buttons
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col1:
@@ -665,17 +689,18 @@ def show_message():
             st.rerun()
     
     with col3:
-        if st.button(f"❤️ Thương ({st.session_state.love_count})", use_container_width=True):
+        if st.button(f"❤️ Thương ({st.session_state.love_count})", use_container_width=True, key="love_btn"):
             st.session_state.love_count += 1
             
             # Tạo flying hearts
+            hearts_html = ""
             for i in range(5):
                 x = random.randint(-200, 200)
                 y = random.randint(-300, -100)
                 rotation = random.randint(-180, 180)
                 emoji = random.choice(['❤️', '💕', '💖', '💗', '💝'])
                 
-                heart_html = f"""
+                hearts_html += f"""
                 <div class="flying-heart" style="
                     left: 50%; 
                     top: 70%; 
@@ -684,13 +709,15 @@ def show_message():
                     --fr: {rotation}deg;
                 ">{emoji}</div>
                 """
-                st.session_state.flying_hearts.append(heart_html)
             
-            # Check if 2 clicks
-            if st.session_state.love_count >= 2:
+            hearts_container.markdown(hearts_html, unsafe_allow_html=True)
+            
+            # Check if 10 clicks
+            if st.session_state.love_count >= 10:
                 st.session_state.show_fool = True
-            
-            st.rerun()
+                st.rerun()
+            else:
+                st.rerun()
     
     st.markdown("""
     <p class='footer-text'>
@@ -700,7 +727,7 @@ def show_message():
     
     st.markdown("""
     <div style='text-align: center; margin-top: 2rem; color: #f06292; font-family: "Dancing Script", cursive;'>
-        <p>#MinhThuy #Valentine2026 #Namtraniuminhminh 💖</p>
+        <p>#MinhThuy #Valentine2025 💖</p>
     </div>
     """, unsafe_allow_html=True)
 
